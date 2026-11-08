@@ -5,7 +5,7 @@ import { StoreContext } from "../../context/StoreContext";
 import FoodDetailModal from "../FoodDetailModal/FoodDetailModal";
 
 const FoodItem = ({ id, name, price, description, image, category }) => {
-  const { cartItems, addToCart, removeFromCart, url } =
+  const { cartItems, addToCart, removeFromCart, url, getImageUrl } =
     useContext(StoreContext);
   const [showModal, setShowModal] = useState(false);
 
@@ -21,8 +21,12 @@ const FoodItem = ({ id, name, price, description, image, category }) => {
         <div className="food-item-img-container">
           <img
             className="food-item-image"
-            src={`${url}/images/${image}`}
+            src={getImageUrl ? getImageUrl(image) : `/images/${image}`}
             alt={name}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = `/images/${image}`;
+            }}
           />
           <div onClick={(e) => e.stopPropagation()}>
             {quantity === 0 ? (

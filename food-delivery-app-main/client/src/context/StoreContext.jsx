@@ -1,5 +1,6 @@
 import axios from "axios";
 import { createContext, useEffect, useState, useRef } from "react";
+import { food_list as defaultFoodList } from "../assets/assets";
 
 export const StoreContext = createContext(null);
 
@@ -7,9 +8,18 @@ const StoreContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
   const url = import.meta.env.VITE_SERVER_URL || "http://localhost:4000";
   const [token, setToken] = useState("");
-  const [food_list, setFoofList] = useState([]);
+  const [food_list, setFoofList] = useState(defaultFoodList);
   const [searchQuery, setSearchQuery] = useState("");
   const buttonRef = useRef(null);
+
+  const getImageUrl = (imageName) => {
+    if (!imageName) return "";
+    if (imageName.startsWith("http://") || imageName.startsWith("https://")) return imageName;
+    if (typeof window !== "undefined" && window.location.protocol === "https:" && (!url || url.includes("localhost"))) {
+      return `/images/${imageName}`;
+    }
+    return `${url}/images/${imageName}`;
+  };
 
   const addToCart = async (itemId) => {
     const key = String(itemId);
@@ -85,10 +95,11 @@ const StoreContextProvider = (props) => {
     try {
       const response = await axios.get(`${url}/api/food/list`);
       const foods = response.data?.data;
-      setFoofList(Array.isArray(foods) ? foods : []);
+      if (Array.isArray(foods) && foods.length > 0) {
+        setFoofList(foods);
+      }
     } catch (error) {
-      console.error("Failed to fetch food list:", error);
-      setFoofList([]);
+      console.log("Using built-in food menu items.");
     }
   };
 
@@ -162,6 +173,7 @@ const StoreContextProvider = (props) => {
     userProfile,
     setUserProfile,
     fetchUserProfile,
+    getImageUrl,
   };
 
   return (

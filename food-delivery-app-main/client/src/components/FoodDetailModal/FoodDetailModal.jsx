@@ -4,7 +4,7 @@ import { StoreContext } from "../../context/StoreContext";
 import { assets } from "../../assets/assets";
 
 const FoodDetailModal = ({ item, isOpen, onClose }) => {
-  const { cartItems, addToCart, removeFromCart, url } = useContext(StoreContext);
+  const { cartItems, addToCart, removeFromCart, url, getImageUrl } = useContext(StoreContext);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -32,9 +32,13 @@ const FoodDetailModal = ({ item, isOpen, onClose }) => {
 
         <div className="food-detail-media">
           <img
-            src={`${url}/images/${item.image}`}
+            src={getImageUrl ? getImageUrl(item.image) : `/images/${item.image}`}
             alt={item.name}
             className="food-detail-img"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = `/images/${item.image}`;
+            }}
           />
           {item.category && (
             <span className="food-detail-badge">{item.category}</span>
