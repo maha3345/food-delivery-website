@@ -1,0 +1,8 @@
+{
+  "name": "food-delivery-website",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd food-delivery-app-main/client && npm install && npm run build"
+  }
+}

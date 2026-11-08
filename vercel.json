@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd food-delivery-app-main/client && npm install && npm run build",
+  "outputDirectory": "food-delivery-app-main/client/dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
