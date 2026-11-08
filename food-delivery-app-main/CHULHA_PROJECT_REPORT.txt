@@ -1,0 +1,214 @@
+================================================================================
+                    PROJECT REPORT: CHULHA FOOD DELIVERY APP
+               A Full-Stack MERN/PERN Web Application Architecture
+================================================================================
+
+1. EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+Chulha is a full-stack, enterprise-grade online food ordering and delivery web 
+application. The system allows end customers to seamlessly browse categorized 
+culinary menus, perform real-time searches, manage shopping carts with automated 
+calculations, authenticate securely using encrypted credentials, and execute 
+digital payments via Stripe. 
+
+Additionally, the platform includes a dedicated Administrative Management 
+Dashboard that empowers kitchen and store administrators to manage food items, 
+upload dish photography, manage menu pricing, and update order fulfillment 
+statuses in real time.
+
+Originally configured on a NoSQL stack, the system has been migrated to a robust 
+relational PostgreSQL database powered by the Sequelize ORM, ensuring ACID 
+compliance, data integrity, and production-grade performance.
+
+
+2. SYSTEM ARCHITECTURE & TECHNICAL STACK
+--------------------------------------------------------------------------------
+The application is designed using a decoupled, 3-tier client-server architecture:
+
+A. FRONTEND CLIENT (Customer App & Admin Panel)
+   - Library/Framework: React 18.3.1
+   - Build Tool & Dev Server: Vite 5.3.3
+   - Routing: React Router DOM (v6.24)
+   - State Management: React Context API (StoreContext)
+   - API Communication: Axios HTTP Client
+   - Styling: Responsive Custom CSS3, Google Fonts (Plus Jakarta Sans, Outfit)
+   - Notifications: React Toastify
+
+B. BACKEND API SERVER
+   - Runtime Environment: Node.js (v24.x)
+   - Web Application Framework: Express.js (v4.19.2)
+   - Object-Relational Mapping (ORM): Sequelize (v6.37.8)
+   - Database Driver: pg / pg-hstore
+   - Authentication Middleware: JSON Web Tokens (jsonwebtoken v9.0.2)
+   - Password Encryption: bcrypt (v5.1.1)
+   - File Uploads: Multer (disk storage engine with MIME validation)
+   - CORS & Security: Cross-Origin Resource Sharing middleware, Dotenv
+
+C. DATABASE LAYER
+   - Database Engine: PostgreSQL 16 (Port 5432)
+   - Database Name: food_delivery
+   - Entities: food, users, orders
+   - Complex Data Types: JSONB for dynamic carts, item arrays, and delivery addresses
+
+D. PAYMENT SYSTEM
+   - Payment Mode: Cash on Delivery (COD)
+   - Order Confirmation: Direct instant order confirmation with zero payment gateway latency
+   - Currency: Indian Rupees (INR - ₹) throughout all components and invoices
+
+
+3. HOW THE PLATFORM WORKS: END-TO-END WORKFLOW
+--------------------------------------------------------------------------------
+
+A. CUSTOMER JOURNEY
+   1. Homepage & Menu Exploration:
+      - The user visits the customer portal (http://localhost:5173).
+      - The frontend triggers a GET request to `/api/food/list`.
+      - 24 food items across 8 categories (Salad, Rolls, Deserts, Sandwich, Cake,
+        Pure Veg, Pasta, Noodles) are fetched dynamically from PostgreSQL and 
+        rendered with dish name, image, description, and price in INR.
+
+   2. Real-Time Search & Category Filtering:
+      - Category Pills: Users can click any category to filter the menu immediately.
+      - Dynamic Search Bar: Clicking the search icon expands an active search input.
+        Typing queries (e.g., "paneer", "cake", "salad") filters dishes across 
+        name, description, and category instantly without page reloads.
+
+   3. Cart Management:
+      - Clicking '+' or '-' on any dish triggers Context-level state updates.
+      - Badge counters update synchronously on the top navbar icon and the 
+        bottom floating cart pill.
+      - If the user is authenticated, changes are synced to PostgreSQL via 
+        `POST /api/cart/add` and `POST /api/cart/remove`.
+      - Numeric IDs from PostgreSQL and string keys from JavaScript are unified 
+        to guarantee calculation accuracy.
+
+   4. Cart Review Page (/cart):
+      - Displays itemized rows: Image, Title, Price, Quantity, Row Total, and 
+        an interactive remove (X) button.
+      - Automatically computes Subtotal, Fixed Delivery Fee (₹99), and Final Total.
+      - Includes empty-state safeguards with a "Browse Menu" redirect.
+
+   5. User Authentication & Security:
+      - Login/Sign Up Popup: Modal allowing new account creation or sign in.
+      - Password Protection: Passwords are encrypted using bcrypt (10 salt rounds) 
+        before touching the database. Plain-text passwords are never saved.
+      - Token Generation: Successful authentication signs a JWT token containing 
+        the user's unique ID, stored client-side in localStorage.
+      - Quick Demo Feature: Embedded one-click demo login (demo@chulha.com / password123) 
+        allows instant testing without manual form filling.
+
+   6. Checkout & Cash on Delivery (COD) Order (/order):
+      - Captures customer delivery address (Name, Email, Street, City, State, 
+        Pincode, Country, Mobile Phone).
+      - Displays order summary and payment method ("Cash on Delivery (COD)").
+      - Clicking "PLACE ORDER (CASH ON DELIVERY)" triggers `POST /api/order/place`.
+      - The backend creates an Order record in PostgreSQL (payment: false), 
+        sets status to "Food Processing", and clears the cart in the database.
+
+   7. Instant Order Confirmation & Tracking (/myorders):
+      - Upon order placement, local cart is emptied and customer is navigated 
+        directly to My Orders (`/myorders`).
+      - Customer tracks their placed order live: itemized dishes, total price (₹), 
+        Cash on Delivery payment mode, and order fulfillment status 
+        ("Food Processing", "Out for Delivery", "Delivered") with live status refresh.
+
+B. ADMINISTRATIVE DASHBOARD JOURNEY (http://localhost:5174)
+   1. Food Management (/add):
+      - Admins can upload custom food photos via Multer disk storage.
+      - Inputs for Name, Description, Category, and Price.
+      - Form submission stores the file in `server/uploads/` and inserts the 
+        record into PostgreSQL.
+
+   2. Menu Inventory (/list):
+      - Tabular overview of all dishes in the database with thumbnails.
+      - Single-click deletion removes the record from PostgreSQL and deletes 
+        the image from disk.
+
+   3. Order Fulfillment (/orders):
+      - Displays incoming customer orders, customer contact info, delivery address, 
+        and item breakdown.
+      - Dropdown menu allows real-time status updates:
+        "Food Processing" -> "Out for Delivery" -> "Delivered".
+
+
+4. DATABASE SCHEMA & DATA DICTIONARY
+--------------------------------------------------------------------------------
+
+TABLE 1: `food`
+- id (INTEGER, PRIMARY KEY, Auto Increment)
+- name (VARCHAR 255, NOT NULL)
+- description (TEXT, NOT NULL)
+- price (DOUBLE PRECISION, NOT NULL)
+- image (VARCHAR 255, NOT NULL) - References server/uploads filename
+- category (VARCHAR 255, NOT NULL) - Menu classification
+- createdAt (TIMESTAMP WITH TIME ZONE, DEFAULT CURRENT_TIMESTAMP)
+- updatedAt (TIMESTAMP WITH TIME ZONE, DEFAULT CURRENT_TIMESTAMP)
+
+TABLE 2: `users`
+- id (INTEGER, PRIMARY KEY, Auto Increment)
+- name (VARCHAR 255, NOT NULL)
+- email (VARCHAR 255, UNIQUE, NOT NULL)
+- password (VARCHAR 255, NOT NULL) - 60-character bcrypt hash
+- cartData (JSONB, DEFAULT {}) - Key-value pair of { [foodId]: quantity }
+- createdAt (TIMESTAMP WITH TIME ZONE, DEFAULT CURRENT_TIMESTAMP)
+- updatedAt (TIMESTAMP WITH TIME ZONE, DEFAULT CURRENT_TIMESTAMP)
+
+TABLE 3: `orders`
+- id (INTEGER, PRIMARY KEY, Auto Increment)
+- userId (INTEGER, NOT NULL) - Associated user ID
+- items (JSONB, NOT NULL) - Array of purchased food item objects with quantities
+- amount (DOUBLE PRECISION, NOT NULL) - Final bill amount (INR)
+- address (JSONB, NOT NULL) - Nested object with complete delivery details
+- status (VARCHAR 255, DEFAULT 'Food Processing')
+- payment (BOOLEAN, DEFAULT FALSE) - Confirmed upon Stripe webhook/verify
+- createdAt (TIMESTAMP WITH TIME ZONE, DEFAULT CURRENT_TIMESTAMP)
+- updatedAt (TIMESTAMP WITH TIME ZONE, DEFAULT CURRENT_TIMESTAMP)
+
+
+5. KEY TECHNICAL IMPROVEMENTS & FIXES IMPLEMENTED
+--------------------------------------------------------------------------------
+1. Database Architecture Migration:
+   - Completely replaced MongoDB/Mongoose with PostgreSQL/Sequelize.
+   - Refactored all data models, queries (.find -> .findAll, .findById -> .findByPk).
+   - Created prototype alias `_id` mapped to `id` for 100% frontend backwards compatibility.
+
+2. Critical Bug Fixes:
+   - Fixed Stripe environment variable typo (`STRIPE_SECRET_KET` -> `STRIPE_SECRET_KEY`).
+   - Fixed Multer middleware signature that previously crashed image uploads.
+   - Fixed data type collision where PostgreSQL integer IDs failed string comparisons in cart calculations.
+   - Resolved port conflict by configuring Admin Panel on Port 5174 and Client on Port 5173.
+
+3. User Interface & Branding Overhaul:
+   - Rebranded application from "Tomato" to "Chulha" across tabs, headers, navbars, and footers.
+   - Eliminated all Latin placeholder text (Lorem ipsum) with mouth-watering English food descriptions.
+   - Removed obsolete "Available on Play Store" section.
+   - Modernized typography with Google Font 'Plus Jakarta Sans'.
+   - Upgraded UI styling with warm terracotta accents (#ff4a22), card elevation, and responsive hover effects.
+   - Updated customer care contact number to standard 10 digits (+91 9876543210).
+
+4. Usability Tools:
+   - Implemented real-time interactive search in the navbar.
+   - Built a 1-click desktop batch script (`Open PostgreSQL Database.bat`) allowing direct database access without password prompts.
+
+
+6. CURRENT RUNNING CONFIGURATION & PORTS
+--------------------------------------------------------------------------------
+- Customer Application:  http://localhost:5173
+- Admin Dashboard:       http://localhost:5174
+- Backend REST API:      http://localhost:4000
+- PostgreSQL Database:   localhost:5432 (Database: food_delivery)
+- Stripe Mode:           Test Mode (Key: sk_test_51USv...)
+
+
+7. PRODUCTION DEPLOYMENT CHECKLIST (GOING LIVE)
+--------------------------------------------------------------------------------
+1. Replace Stripe test API key (`sk_test_...`) with production key (`sk_live_...`).
+2. Implement server-side Stripe Webhook listener for asynchronous payment verification.
+3. Update `FRONTEND_URL` and `VITE_SERVER_URL` in environment files to point to cloud domains.
+4. Deploy Client and Admin to a modern CDN/edge platform (Vercel, Netlify, AWS CloudFront).
+5. Deploy Backend and PostgreSQL to cloud infrastructure (Render, Railway, AWS EC2 / RDS).
+6. Enable HTTPS/SSL across all domains for secure data transmission and PCI-DSS compliance.
+
+================================================================================
+                         END OF REPORT - CHULHA APP
+================================================================================
