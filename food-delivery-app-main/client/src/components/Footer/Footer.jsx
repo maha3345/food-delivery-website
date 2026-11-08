@@ -31,13 +31,12 @@ const Footer = () => {
             <h2>GET IN TOUCH</h2>
             <ul>
               <li>+91 9876543210</li>
-              <li>contact@chulha.com</li>
             </ul>
           </div>
         </div>
         <hr />
         <p className="footer-copyright">
-          Copyright 2024 © Chulha - All Rights Reserved.
+          Copyright 2026 © Chulha - All Rights Reserved.
         </p>
       </div>
     </>
