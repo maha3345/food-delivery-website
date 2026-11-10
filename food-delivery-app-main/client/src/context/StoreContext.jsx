@@ -118,7 +118,14 @@ const StoreContextProvider = (props) => {
     }
   };
 
-  const [userProfile, setUserProfile] = useState(null);
+  const [userProfile, setUserProfile] = useState(() => {
+    try {
+      const cached = localStorage.getItem("user_profile");
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  });
 
   const fetchUserProfile = async (activeToken) => {
     const t = activeToken || token;
@@ -129,10 +136,16 @@ const StoreContextProvider = (props) => {
       });
       if (res.data.success && res.data.user) {
         setUserProfile(res.data.user);
+        localStorage.setItem("user_profile", JSON.stringify(res.data.user));
+        return;
       }
     } catch (err) {
-      console.error("Failed to load user profile:", err);
+      console.log("Using cached/local user profile.");
     }
+    try {
+      const cached = localStorage.getItem("user_profile");
+      if (cached) setUserProfile(JSON.parse(cached));
+    } catch (e) {}
   };
 
   useEffect(() => {

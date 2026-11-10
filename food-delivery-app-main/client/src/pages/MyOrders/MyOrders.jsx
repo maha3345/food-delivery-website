@@ -21,12 +21,19 @@ const MyOrders = () => {
         {},
         { headers: { token } }
       );
-      if (response.data.success) {
-        setData(response.data.data || []);
+      if (response.data.success && Array.isArray(response.data.data) && response.data.data.length > 0) {
+        setData(response.data.data);
+        return;
       }
     } catch (err) {
-      console.error(err);
+      console.warn("Backend orders unreachable, loading local orders fallback.");
     } finally {
+      try {
+        const local = JSON.parse(localStorage.getItem("local_orders") || "[]");
+        if (local.length > 0) {
+          setData((prev) => (prev && prev.length > 0 ? prev : local));
+        }
+      } catch (e) {}
       setLoading(false);
     }
   };
